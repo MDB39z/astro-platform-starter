@@ -1,26 +1,245 @@
-{
-    "editor.tabSize": 4,
-    "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": "explicit"
-    },
-    "[javascript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "[yaml]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.tabSize": 2
-    },
-    "[toml]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.tabSize": 2
-    },
-    "[markdown]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "editor.tabSize": 2
-    },
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "files.associations": {
-        "*.css": "tailwindcss"
+// ============== VARIABLES GLOBALES ==============
+const hamburger = document.getElementById('hamburger');
+const navMenu = document.getElementById('navMenu');
+const contactForm = document.getElementById('contactForm');
+
+// ============== HAMBURGER MENU ==============
+hamburger?.addEventListener('click', toggleHamburger);
+
+function toggleHamburger() {
+    hamburger.classList.toggle('active');
+    navMenu.classList.toggle('active');
+}
+
+// Fermer le menu quand on clique sur un lien
+document.querySelectorAll('.nav-menu a').forEach(link => {
+    link.addEventListener('click', () => {
+        hamburger.classList.remove('active');
+        navMenu.classList.remove('active');
+    });
+});
+
+// Fermer le menu si on clique en dehors
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.nav-wrapper')) {
+        hamburger?.classList.remove('active');
+        navMenu?.classList.remove('active');
+    }
+});
+
+// ============== SMOOTH SCROLLING ==============
+function scrollToSection(sectionId) {
+    const element = document.getElementById(sectionId);
+    
+    if (element) {
+        element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+        
+        // Fermer le menu mobile si ouvert
+        hamburger?.classList.remove('active');
+        navMenu?.classList.remove('active');
     }
 }
+
+// ============== FAQ TOGGLE ==============
+function toggleFaq(button) {
+    const faqItem = button.parentElement;
+    const faqAnswer = faqItem.querySelector('.faq-answer');
+    const icon = button.querySelector('.faq-icon');
+    
+    // Fermer toutes les autres FAQ
+    document.querySelectorAll('.faq-item').forEach(item => {
+        if (item !== faqItem) {
+            item.classList.remove('active');
+            item.querySelector('.faq-answer').style.maxHeight = '0';
+            item.querySelector('.faq-icon').textContent = '+';
+        }
+    });
+    
+    // Toggle la FAQ actuelle
+    faqItem.classList.toggle('active');
+    
+    if (faqItem.classList.contains('active')) {
+        faqAnswer.style.maxHeight = faqAnswer.scrollHeight + 'px';
+        icon.textContent = '−';
+    } else {
+        faqAnswer.style.maxHeight = '0';
+        icon.textContent = '+';
+    }
+}
+
+// ============== FORM SUBMISSION ==============
+contactForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Récupérer les données du formulaire
+    const formData = new FormData(contactForm);
+    const data = {
+        name: formData.get('name'),
+        email: formData.get('email'),
+        phone: formData.get('phone') || 'Non fourni',
+        company: formData.get('company'),
+        sector: formData.get('sector'),
+        message: formData.get('message'),
+        timestamp: new Date().toISOString()
+    };
+    
+    try {
+        // Validation supplémentaire
+        if (!data.name || !data.email || !data.company || !data.sector || !data.message) {
+            showNotification('Veuillez remplir tous les champs obligatoires', 'error');
+            return;
+        }
+        
+        // Validation email
+        if (!isValidEmail(data.email)) {
+            showNotification('Veuillez entrer une adresse email valide', 'error');
+            return;
+        }
+        
+        // Afficher le message de succès (en production, envoyer à un serveur)
+        console.log('Données du formulaire:', data);
+        
+        // Simuler l'envoi
+        const submitButton = contactForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Envoi en cours...';
+        
+        // Simuler un délai d'envoi
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        showNotification('✅ Votre demande a été envoyée avec succès ! Nous vous contacterons dans les 2 heures.', 'success');
+        
+        // Réinitialiser le formulaire
+        contactForm.reset();
+        submitButton.disabled = false;
+        submitButton.textContent = 'Envoyer ma demande';
+        
+    } catch (error) {
+        console.error('Erreur lors de l\'envoi:', error);
+        showNotification('Une erreur est survenue. Veuillez réessayer.', 'error');
+    }
+});
+
+// ============== VALIDATION EMAIL ==============
+function isValidEmail(email) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+}
+
+// ============== NOTIFICATIONS ==============
+function showNotification(message, type = 'info') {
+    // Supprimer les notifications existantes
+    document.querySelectorAll('.notification').forEach(n => n.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            ${message}
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animation d'entrée
+    setTimeout(() => notification.classList.add('show'), 10);
+    
+    // Auto-suppression après 5 secondes
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
+}
+
+// ============== ANIMATION SCROLL ==============
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -100px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('animated');
+            observer.unobserve(entry.target);
+        }
+    });
+}, observerOptions);
+
+// Observer les éléments à animer
+document.querySelectorAll('.pricing-card, .testimonial-card, .pourquoi-item, .value-item').forEach(el => {
+    el.classList.add('fade-in');
+    observer.observe(el);
+});
+
+// ============== NAVBAR SCROLL EFFECT ==============
+let lastScrollTop = 0;
+const navbar = document.querySelector('.navbar');
+
+window.addEventListener('scroll', () => {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Ajouter une ombre quand on scroll
+    if (scrollTop > 50) {
+        navbar?.classList.add('scrolled');
+    } else {
+        navbar?.classList.remove('scrolled');
+    }
+    
+    lastScrollTop = scrollTop;
+});
+
+// ============== COMPTEUR ANIMÉ ==============
+function animateCounter(element, target, duration = 2000) {
+    const start = 0;
+    const startTime = performance.now();
+    
+    const updateCounter = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        if (typeof target === 'number') {
+            element.textContent = Math.floor(progress * target);
+        }
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateCounter);
+        }
+    };
+    
+    requestAnimationFrame(updateCounter);
+}
+
+// Observer les stats du hero
+const statsObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting && !entry.target.classList.contains('counted')) {
+            entry.target.classList.add('counted');
+            const statsElements = entry.target.querySelectorAll('.stat strong');
+            
+            statsElements.forEach(stat => {
+                const text = stat.textContent;
+                const number = parseInt(text);
+                
+                if (!isNaN(number)) {
+                    animateCounter(stat, number, 2000);
+                }
+            });
+            
+            statsObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.5 });
+
+const heroStats = document.querySelector('.hero-stats');
+if (heroStats) {
+    statsObserver.observe(heroStats);
+}
+
+// ============== INIT ==============
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('SocialBoost landing page loaded ✅');
+});
